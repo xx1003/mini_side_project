@@ -13,12 +13,12 @@ if __name__=='__main__':
     
     if credit_or_check == '1':
         
-        # ####################################
-        # # 카드 순위 정보 출력 기능
-        # print("<< 신용카드 top 99위 >>")
-        # for rank, name in zip(credit_df['순위'], credit_df['카드 이름']):
-        #     print(f"{rank:>5}위 : {name}")
-        # ####################################
+        ####################################
+        # 카드 순위 정보 출력 기능
+        print("<< 신용카드 top 99위 >>")
+        for rank, name in zip(credit_df['순위'], credit_df['카드 이름']):
+            print(f"{rank:>5}위 : {name}")
+        ####################################
 
         # ####################################
         # 주사용 카드 입력받는 기능
@@ -43,7 +43,7 @@ if __name__=='__main__':
         }
 
         for i in range(1, len(part_dict)+1):
-            print(f"{i+1}. {part_dict[str(i)][0]}")
+            print(f"{i}. {part_dict[str(i)][0]}")
 
         parts = input("가장 많이 소비하는 영역을 소비가 많은 순서대로 3가지 골라주세요(space 구분): ").split(sep=" ")
         # print(parts)
@@ -84,6 +84,7 @@ if __name__=='__main__':
             # print(f"사용자에게 맞는 {i+1}위 카드 : {sorted_dict[i][0]}")
         
         if not check:
+            print()
             print("현재 사용하는 카드는 사용자의 소비패턴에 맞지 않아요!")
             print()
             print(f"- 사용자의 카드 <<{user_card_name}>> 가 제공하는 혜택 top 3 -")
