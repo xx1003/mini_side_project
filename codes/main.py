@@ -1,18 +1,27 @@
 import pandas as pd
 import streamlit as st
+import json
 
-credit_df = pd.read_excel("data/credit_card_data.xlsx")
-check_df = pd.read_excel("data/check_card_data.xlsx")
+credit_df = pd.read_excel("data/credit_data_final.xlsx")
+check_df = pd.read_excel("data/check_data_final.xlsx")
+
+bene_list = ['카페 브랜드', '편의점 브랜드', '쇼핑 브랜드', '배달앱 브랜드', '문화생활 브랜드', '디지털구독 브랜드']
+
+for col in bene_list:
+    credit_df[col] = credit_df[col].apply(json.loads)
+    check_df[col] = check_df[col].apply(json.loads)
+
+
 # st.subheader("데이터 미리보기")
 # st.dataframe(credit_df)
 
 if __name__=='__main__':
+    
     # print(type(credit_df.loc[0,'순위']))
     print("- 사용자의 주사용 카드 입력 -")
     credit_or_check = input("1.신용카드    2.체크카드 : ")
     
     if credit_or_check == '1':
-        
         ####################################
         # 카드 순위 정보 출력 기능
         print("<< 신용카드 top 99위 >>")
@@ -34,12 +43,12 @@ if __name__=='__main__':
         print("- 사용자의 소비패턴 입력 -")
 
         part_dict = {
-            '1':['가맹점', '최대 가맹점 혜택'], '2':['교통', '최대 교통 혜택'], '3':['쇼핑', '최대 쇼핑 혜택'],
-            '4':['카페', '최대 카페 혜택'], '5':['편의점', '최대 편의점 혜택'], '6':['이동통신', '최대 이동통신 혜택'],
-            '7':['의료 (병원/약국)', '최대 의료 혜택'], '8':['디지털구독 (OTT/스트리밍)', '최대 디지털구독 혜택'], 
-            '9':['배달앱/간편결제', '최대 배달앱/간편결제 혜택'], '10':['외식', '최대 외식 혜택'], 
+            '1':['가맹점', '최대 가맹점 혜택'], '2':['교통', '최대 교통 혜택'], '3':['쇼핑', '최대 쇼핑 혜택', '쇼핑 브랜드'],
+            '4':['카페', '최대 카페 혜택', '카페 브랜드'], '5':['편의점', '최대 편의점 혜택', '편의점 브랜드'], '6':['이동통신', '최대 이동통신 혜택'],
+            '7':['의료 (병원/약국)', '최대 의료 혜택'], '8':['디지털구독 (OTT/스트리밍)', '최대 디지털구독 혜택', '디지털구독 브랜드'], 
+            '9':['배달앱/간편결제', '최대 배달앱/간편결제 혜택', '배달앱 브랜드'], '10':['외식', '최대 외식 혜택'], 
             '11':['차량 서비스', '최대 차량 혜택'], '12':['항공', '항공 혜택 개수'], 
-            '13':['문화생활 (영화/테마파크)','최대 문화생활 혜택']
+            '13':['문화생활 (영화/테마파크)','최대 문화생활 혜택', '문화생활 브랜드']
         }
 
         for i in range(1, len(part_dict)+1):
@@ -47,6 +56,73 @@ if __name__=='__main__':
 
         parts = input("가장 많이 소비하는 영역을 소비가 많은 순서대로 3가지 골라주세요(space 구분): ").split(sep=" ")
         # print(parts)
+        ####################################
+
+        # 선택한 소비영역에서 자주 사용하는 브랜드 입력받는 기능
+        brand_dict = {
+            '3':["현대백화점", "롯데백화점", "신세계백화점",\
+                 "롯데마트", "이마트",\
+                 "쿠팡", "11번가", "G마켓", "옥션", "무신사"],
+            '4':["스타벅스", "투썸", "이디야", "메가커피", "컴포즈"],
+            '5':["CU", "GS25", "세븐일레븐"], 
+            '8':["넷플릭스", "티빙", "쿠팡플레이", "쿠팡 플레이", "웨이브", "유튜브"], 
+            '9':["배달의민족", "배달의 민족", "배민", "요기요", "쿠팡이츠", "쿠팡 이츠"], 
+            '13':["CGV", "메가박스", "롯데시네마", "에버랜드", "롯데월드"]
+        }
+
+        print("\n영역별 자주 사용하는 브랜드를 골라주세요.")
+
+        user_brands = {}
+        for part in parts:
+            brands = brand_dict[part]
+            print(f"< {part_dict[part][0]} 영역 브랜드 >")
+            for i, brand in enumerate(brands):
+                print(f"{i+1}. {brand}", end=" ")
+            print()
+            part_brands = input(": ").split(" ")
+
+            temp_brand_names = []
+            
+            if len(part_brands)== 0 or part_brands[0] == '':   # 브랜드를 선택하지 않은 경우
+                continue
+            for part_brand in part_brands:  # index 자료형 str -> int 변경 필요
+                if part_brand == '':
+                    continue
+                temp_brand_names.append(brand_dict[part][int(part_brand) - 1])
+            
+            user_brands[part] = temp_brand_names
+
+        print()
+
+        for k, v in user_brands.items():
+            print(f"{part_dict[k][0]} 영역 브랜드 : ", end='')
+            for brand in v:
+                print(brand, end=" ")
+            print()
+
+        ####################################
+
+        # 카드 혜택에 사용자가 선택한 브랜드가 포함되어 있는지 필터링
+        brand_include_cards = {}   # 사용자가 선택한 브랜드 혜택을 포함하는 카드 이름 저장
+
+        for user_brand in user_brands.keys():
+            consume_part_num = user_brand                               # 소비영역 번호 (자료형:str)
+            consume_part_str = part_dict[consume_part_num][0]           # 소비영역명 (자료형:str)
+            bene_percent = part_dict[consume_part_num][1]               # 소비영역 최대 혜택률 (자료형:float)
+            consume_part_brand_col = part_dict[consume_part_num][2]     # 소비영역 브랜드 컬럼명 (ex: '카페 브랜드')
+            user_choose_brands = user_brands[user_brand]                # 사용자가 선택한 브랜드들 (자료형:list)
+
+            print(f"\n- 사용자가 {consume_part_str} 영역에서 선택한 브랜드 혜택을 포함하는 카드 -")
+            part_include_cards = credit_df.loc[credit_df[bene_percent]!=0, :]   # 1차 필터링 : 소비영역 포함 카드
+            
+            ######## error!!!!!!! ################
+            for ucb in user_choose_brands:
+                filt = ucb in part_include_cards[consume_part_brand_col]
+                print(part_include_cards[filt])
+            ########################################
+            
+            # print(user_brand, user_brands[user_brand])
+            # print(credit_df.loc[credit_df[bene_percent]!=0, :]['카드 이름'])
         ####################################
 
         ####################################
@@ -112,7 +188,3 @@ if __name__=='__main__':
             idx += 1
             # 추천 카드 혜택 나열 기능 추가해야 함
         ##################################
-        
-        
-
-        
