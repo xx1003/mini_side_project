@@ -110,21 +110,26 @@ if __name__=='__main__':
             consume_part_str = part_dict[consume_part_num][0]           # 소비영역명 (자료형:str)
             bene_percent = part_dict[consume_part_num][1]               # 소비영역 최대 혜택률 (자료형:float)
             consume_part_brand_col = part_dict[consume_part_num][2]     # 소비영역 브랜드 컬럼명 (ex: '카페 브랜드')
-            user_choose_brands = user_brands[user_brand]                # 사용자가 선택한 브랜드들 (자료형:list)
+            user_choose_brands = user_brands[consume_part_num]                # 사용자가 선택한 브랜드들 (자료형:list)
 
-            print(f"\n- 사용자가 {consume_part_str} 영역에서 선택한 브랜드 혜택을 포함하는 카드 -")
+            # print(f"\n- 사용자가 {consume_part_str} 영역에서 선택한 브랜드 혜택을 포함하는 카드 -")
             part_include_cards = credit_df.loc[credit_df[bene_percent]!=0, :]   # 1차 필터링 : 소비영역 포함 카드
-            
-            ######## error!!!!!!! ################
-            for ucb in user_choose_brands:
-                filt = ucb in part_include_cards[consume_part_brand_col]
-                print(part_include_cards[filt])
-            ########################################
-            
-            # print(user_brand, user_brands[user_brand])
-            # print(credit_df.loc[credit_df[bene_percent]!=0, :]['카드 이름'])
-        ####################################
+            part_include_cards.reset_index(drop=True, inplace=True)
 
+            temp_card_names = []
+           
+            for ucb in user_choose_brands:                                      # 2차 필터링 : 사용자가 고른 브랜드를 하나라도 포함하는 카드
+                for idx in range(len(part_include_cards)):
+                    if ucb in part_include_cards.loc[idx, consume_part_brand_col]:
+                        temp_card_names.append(part_include_cards.loc[idx, '카드 이름'])
+            temp_card_names = list(set(temp_card_names))
+            brand_include_cards[consume_part_num] = temp_card_names
+            print(f"\n- 사용자가 {consume_part_str} 영역에서 선택한 브랜드 혜택을 포함하는 카드 -")
+            print(temp_card_names, "\n")
+
+        ####################################
+        # for k, v in brand_include_cards.items():
+        #     print(f"{part_dict[k][0] }")
         ####################################
         # 가중치 사용한 점수 기반 추천시스템 계산하는 기능
         weights = [0.5, 0.3, 0.2]   # 임시 가중치       
