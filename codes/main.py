@@ -40,8 +40,12 @@ if __name__=='__main__':
 
         ####################################
         # 사용자 소비패턴 입력받는 기능
-        print("- 사용자의 소비패턴 입력 -")
+        print("- 사용자님의 주사용 카드 소비패턴 입력 -")
 
+        total_amount = int(input("해당 카드의 월 평균 소비금액을 알려주세요: "))
+        
+        
+        # 자주 사용하는 소비 항목 입력받는 기능
         part_dict = {
             '1':['가맹점', '최대 가맹점 혜택'], '2':['교통', '최대 교통 혜택'], '3':['쇼핑', '최대 쇼핑 혜택', '쇼핑 브랜드'],
             '4':['카페', '최대 카페 혜택', '카페 브랜드'], '5':['편의점', '최대 편의점 혜택', '편의점 브랜드'], '6':['이동통신', '최대 이동통신 혜택'],
@@ -54,9 +58,21 @@ if __name__=='__main__':
         for i in range(1, len(part_dict)+1):
             print(f"{i}. {part_dict[str(i)][0]}")
 
-        parts = input("가장 많이 소비하는 영역을 소비가 많은 순서대로 3가지 골라주세요(space 구분): ").split(sep=" ")
-        # print(parts)
-        ####################################
+        temp_parts = input("자주 사용하는 소비 항목을 많이 쓰는 순서대로 선택해주세요.(space 구분): ").split(sep=" ")
+        
+        parts = []
+
+        # 띄어쓰기 때문에 공백 들어가는 거 방지
+        for part in temp_parts:            
+            if part!='':
+                parts.append(part)
+
+        # 소비 항목별 이용금액 입력받는 기능
+        print("\n자주 사용하는 소비 항목의 대략적인 금액을 작성해주세요.")
+        consume_amount = {}
+        for idx, part in enumerate(parts):
+            consume_amount[part] = int(input(f"{idx+1}. {part_dict[part][0]}: "))
+
 
         # 선택한 소비영역에서 자주 사용하는 브랜드 입력받는 기능
         brand_dict = {
@@ -100,29 +116,61 @@ if __name__=='__main__':
                 print(brand, end=" ")
             print()
 
-        ####################################
+        ######################################################
 
-        # 카드 혜택에 사용자가 선택한 브랜드가 포함되어 있는지 필터링
+
+
+        ######################################################
+        # 현재카드 분석하는 기능
+
+
+
+
+
+
+
+        ######################################################
+
+
+
+        #######################################################
+        # 추천카드 선정하는 기능 
+
+        # step 1. 카드 혜택에 사용자가 선택한 브랜드가 포함되어 있는지 필터링
         brand_include_cards = {}   # 사용자가 선택한 브랜드 혜택을 포함하는 카드 이름 저장
 
-        for user_brand in user_brands.keys():
+        for user_brand in user_brands.keys():                           # 소비영역별로 for 루프 돌기
             consume_part_num = user_brand                               # 소비영역 번호 (자료형:str)
             consume_part_str = part_dict[consume_part_num][0]           # 소비영역명 (자료형:str)
             bene_percent = part_dict[consume_part_num][1]               # 소비영역 최대 혜택률 (자료형:float)
             consume_part_brand_col = part_dict[consume_part_num][2]     # 소비영역 브랜드 컬럼명 (ex: '카페 브랜드')
-            user_choose_brands = user_brands[consume_part_num]                # 사용자가 선택한 브랜드들 (자료형:list)
+            user_choose_brands = user_brands[consume_part_num]          # 사용자가 선택한 브랜드들 (자료형:list)
 
             # print(f"\n- 사용자가 {consume_part_str} 영역에서 선택한 브랜드 혜택을 포함하는 카드 -")
-            part_include_cards = credit_df.loc[credit_df[bene_percent]!=0, :]   # 1차 필터링 : 소비영역 포함 카드
+
+            # 1차 필터링 : 소비영역 포함 카드
+            part_include_cards = credit_df.loc[credit_df[bene_percent]!=0, :]   
             part_include_cards.reset_index(drop=True, inplace=True)
 
             temp_card_names = []
            
-            for ucb in user_choose_brands:                                      # 2차 필터링 : 사용자가 고른 브랜드를 하나라도 포함하는 카드
+            # 2차 필터링 : 사용자가 고른 브랜드를 포함하는 카드, 브랜드를 많이 포함할수록 점수 ++
+            for ucb in user_choose_brands:                                      
                 for idx in range(len(part_include_cards)):
                     if ucb in part_include_cards.loc[idx, consume_part_brand_col]:
                         temp_card_names.append(part_include_cards.loc[idx, '카드 이름'])
-            temp_card_names = list(set(temp_card_names))
+            # temp_card_names = list(set(temp_card_names))
+            temp_name_df = pd.DataFrame(temp_card_names)
+            # print(temp_name_df)
+            # print(temp_name_df[0].value_counts())       # 중복횟수 출력 이걸 점수로 
+            
+            
+            ###### 수정 필요 ###############
+            brand_counts = temp_name_df[0].value_counts()
+            temp_name_df['brand_count'] = temp_name_df[0].map(brand_counts)
+            print(temp_name_df['brand_count'])
+            print()
+
             brand_include_cards[consume_part_num] = temp_card_names
             print(f"\n- 사용자가 {consume_part_str} 영역에서 선택한 브랜드 혜택을 포함하는 카드 -")
             print(temp_card_names, "\n")
