@@ -70,6 +70,7 @@ if __name__=='__main__':
 
         # 소비 항목별 이용금액 입력받는 기능
         print("\n자주 사용하는 소비 항목의 대략적인 금액을 작성해주세요.")
+        print(f"사용자의 월 평균 소비 금액 : {total_amount}원")
         consume_amount = {}
         for idx, part in enumerate(parts):
             consume_amount[part] = int(input(f"{idx+1}. {part_dict[part][0]}: "))
@@ -89,15 +90,24 @@ if __name__=='__main__':
 
         print("\n영역별 자주 사용하는 브랜드를 골라주세요.")
 
+        # 소비영역별 자주 쓰는 브랜드 담을 딕셔너리
         user_brands = {}
+
         for part in parts:
             brands = brand_dict[part]
             print(f"< {part_dict[part][0]} 영역 브랜드 >")
             for i, brand in enumerate(brands):
                 print(f"{i+1}. {brand}", end=" ")
             print()
-            part_brands = input(": ").split(" ")
+            temp_part_brands = input(": ").split(" ")
 
+            # 띄어쓰기 때문에 공백 들어가는 거 방지
+            part_brands = []
+            for part in temp_part_brands:            
+                if part!='' or part!=' ':
+                    part_brands.append(part)
+
+            # 브랜드 이름 담을 리스트
             temp_brand_names = []
             
             if len(part_brands)== 0 or part_brands[0] == '':   # 브랜드를 선택하지 않은 경우
@@ -105,7 +115,7 @@ if __name__=='__main__':
             for part_brand in part_brands:  # index 자료형 str -> int 변경 필요
                 if part_brand == '':
                     continue
-                temp_brand_names.append(brand_dict[part][int(part_brand) - 1])
+                temp_brand_names.append(brand_dict[part][int(part_brand) - 1])  # -1 하는 이유 : 인덱스에 적용하기 위해서
             
             user_brands[part] = temp_brand_names
 
@@ -164,15 +174,7 @@ if __name__=='__main__':
                         temp_card_names.append(part_include_cards.loc[idx, '카드 이름'])
                         temp_credit_df.loc[idx, '브랜드 카드 점수'] += 1
             temp_card_names = list(set(temp_card_names))
-            # temp_name_df = pd.DataFrame(temp_card_names)
-            # print(temp_name_df)
-            # print(temp_name_df[0].value_counts())       # 중복횟수 출력 이걸 점수로 
-            
-            
-            ###### 수정 필요 ###############
-            # brand_counts = temp_name_df[0].value_counts()
-            # temp_name_df['brand_count'] = temp_name_df[0].map(brand_counts)
-            # print(temp_name_df['brand_count'])
+
             print()
 
             brand_include_cards[consume_part_num] = temp_card_names
@@ -218,26 +220,14 @@ if __name__=='__main__':
         # 주사용 카드 분석 + 상위 3개 카드 추천
         check = False
         recommend_cards = []
-        card_rank = 0
-        # while len(recommend_cards) < 3:
-        #     if sorted_dict[card_rank][0] == user_card_info['카드 이름'].values[0]:
-        #         check = True
-        #         continue
+        card_rank = 0       
 
-        #     recommend_cards.append(sorted_dict[card_rank][0])
-        #     card_rank += 1
-            # print(f"사용자에게 맞는 {i+1}위 카드 : {sorted_dict[i][0]}")
-        
-
-        #### 무한루프 걸린 것 같음 왜???? ####################################
         while len(recommend_cards) < 3:
-            if temp_credit_df.loc[card_rank, '카드 이름'] == user_card_name:
+            if temp_credit_df.iloc[card_rank]['카드 이름'] == user_card_name:
                 check = True
                 continue
             recommend_cards.append(temp_credit_df.loc[card_rank, '카드 이름'])
             card_rank += 1
-            # print(f"사용자에게 맞는 {i+1}위 카드 : {sorted_dict[i][0]}")
-        ###################################################################
         
         if not check:
             print()
@@ -259,6 +249,7 @@ if __name__=='__main__':
             for part in parts:
                 print(f"{part_rank}. {part_dict[part][0]}", end='   ')
                 part_rank += 1
+            print()
         else:
             print("좋은 카드 선택!\n")
             print("비슷한 카드를 추천드릴게요")

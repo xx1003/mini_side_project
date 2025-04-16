@@ -17,7 +17,7 @@ if __name__ == "__main__":
     df['num3'] = df['num'] + df['num']
     print(df)
 
-
+    print(df.iloc[4]['num'])
 
     
     
