@@ -16,23 +16,24 @@ for col in bene_list:
 # st.dataframe(credit_df)
 
 if __name__=='__main__':
-    
     # print(type(credit_df.loc[0,'순위']))
     print("- 사용자의 주사용 카드 입력 -")
     credit_or_check = input("1.신용카드    2.체크카드 : ")
     
     if credit_or_check == '1':
+        temp_credit_df = credit_df.copy()
+
         ####################################
         # 카드 순위 정보 출력 기능
         print("<< 신용카드 top 99위 >>")
-        for rank, name in zip(credit_df['순위'], credit_df['카드 이름']):
+        for rank, name in zip(temp_credit_df['순위'], temp_credit_df['카드 이름']):
             print(f"{rank:>5}위 : {name}")
         ####################################
 
         # ####################################
         # 주사용 카드 입력받는 기능
         user_card_rank = int(input("주로 사용하는 카드 입력: "))
-        user_card_info = credit_df.loc[credit_df['순위'] == user_card_rank, :]
+        user_card_info = temp_credit_df.loc[temp_credit_df['순위'] == user_card_rank, :]
         user_card_name = user_card_info['카드 이름'].values[0]
         print(f"사용자님의 카드 : {user_card_name}")
         print()
@@ -135,6 +136,8 @@ if __name__=='__main__':
 
         #######################################################
         # 추천카드 선정하는 기능 
+        temp_credit_df['브랜드 카드 점수'] = 0
+        temp_credit_df['혜택률 카드 점수'] = 0
 
         # step 1. 카드 혜택에 사용자가 선택한 브랜드가 포함되어 있는지 필터링
         brand_include_cards = {}   # 사용자가 선택한 브랜드 혜택을 포함하는 카드 이름 저장
@@ -149,7 +152,7 @@ if __name__=='__main__':
             # print(f"\n- 사용자가 {consume_part_str} 영역에서 선택한 브랜드 혜택을 포함하는 카드 -")
 
             # 1차 필터링 : 소비영역 포함 카드
-            part_include_cards = credit_df.loc[credit_df[bene_percent]!=0, :]   
+            part_include_cards = temp_credit_df.loc[temp_credit_df[bene_percent]!=0, :]   
             part_include_cards.reset_index(drop=True, inplace=True)
 
             temp_card_names = []
@@ -159,28 +162,34 @@ if __name__=='__main__':
                 for idx in range(len(part_include_cards)):
                     if ucb in part_include_cards.loc[idx, consume_part_brand_col]:
                         temp_card_names.append(part_include_cards.loc[idx, '카드 이름'])
-            # temp_card_names = list(set(temp_card_names))
-            temp_name_df = pd.DataFrame(temp_card_names)
+                        temp_credit_df.loc[idx, '브랜드 카드 점수'] += 1
+            temp_card_names = list(set(temp_card_names))
+            # temp_name_df = pd.DataFrame(temp_card_names)
             # print(temp_name_df)
             # print(temp_name_df[0].value_counts())       # 중복횟수 출력 이걸 점수로 
             
             
             ###### 수정 필요 ###############
-            brand_counts = temp_name_df[0].value_counts()
-            temp_name_df['brand_count'] = temp_name_df[0].map(brand_counts)
-            print(temp_name_df['brand_count'])
+            # brand_counts = temp_name_df[0].value_counts()
+            # temp_name_df['brand_count'] = temp_name_df[0].map(brand_counts)
+            # print(temp_name_df['brand_count'])
             print()
 
             brand_include_cards[consume_part_num] = temp_card_names
             print(f"\n- 사용자가 {consume_part_str} 영역에서 선택한 브랜드 혜택을 포함하는 카드 -")
             print(temp_card_names, "\n")
+        
+        # print("브랜드 포함 카드 점수")
+        
+        # print(credit_df.loc[credit_df['브랜드 카드 점수'] > 0, ['카드 이름', '브랜드 카드 점수']])
 
         ####################################
         # for k, v in brand_include_cards.items():
         #     print(f"{part_dict[k][0] }")
+
         ####################################
         # 가중치 사용한 점수 기반 추천시스템 계산하는 기능
-        weights = [0.5, 0.3, 0.2]   # 임시 가중치       
+        weights = [50, 30, 20]   # 임시 가중치       
         
         score_dict = {}
 
@@ -189,13 +198,20 @@ if __name__=='__main__':
             for part, weight in zip(parts, weights):
                 part_col = part_dict[part][1]
                 # print(credit_df.loc[i, part_col])
-                temp_score += credit_df.loc[i, part_col] * weight
-            score_dict[credit_df.loc[i, '카드 이름']] = float(temp_score)
+                temp_score += temp_credit_df.loc[i, part_col] * weight
+            temp_credit_df.loc[i, '혜택률 카드 점수'] = float(temp_score)
+            # score_dict[credit_df.loc[i, '카드 이름']] = float(temp_score)
 
         # print(score_dict)
 
-        sorted_dict = sorted(score_dict.items(), key= lambda item:item[1], reverse=True)
+        # sorted_dict = sorted(score_dict.items(), key= lambda item:item[1], reverse=True)
         # print(sorted_dict)
+
+        temp_credit_df['총합 카드 점수'] = temp_credit_df['브랜드 카드 점수'] + temp_credit_df['혜택률 카드 점수']
+        
+        
+        temp_credit_df.sort_values('총합 카드 점수', ascending=False, inplace=True)
+        print(temp_credit_df.loc[:,['카드 이름', '브랜드 카드 점수', '혜택률 카드 점수', '총합 카드 점수']])
         #################################
         
         ##################################
@@ -203,14 +219,25 @@ if __name__=='__main__':
         check = False
         recommend_cards = []
         card_rank = 0
+        # while len(recommend_cards) < 3:
+        #     if sorted_dict[card_rank][0] == user_card_info['카드 이름'].values[0]:
+        #         check = True
+        #         continue
+
+        #     recommend_cards.append(sorted_dict[card_rank][0])
+        #     card_rank += 1
+            # print(f"사용자에게 맞는 {i+1}위 카드 : {sorted_dict[i][0]}")
+        
+
+        #### 무한루프 걸린 것 같음 왜???? ####################################
         while len(recommend_cards) < 3:
-            if sorted_dict[card_rank][0] == user_card_info['카드 이름'].values[0]:
+            if temp_credit_df.loc[card_rank, '카드 이름'] == user_card_name:
                 check = True
                 continue
-
-            recommend_cards.append(sorted_dict[card_rank][0])
+            recommend_cards.append(temp_credit_df.loc[card_rank, '카드 이름'])
             card_rank += 1
             # print(f"사용자에게 맞는 {i+1}위 카드 : {sorted_dict[i][0]}")
+        ###################################################################
         
         if not check:
             print()
@@ -232,12 +259,12 @@ if __name__=='__main__':
             for part in parts:
                 print(f"{part_rank}. {part_dict[part][0]}", end='   ')
                 part_rank += 1
+        else:
+            print("좋은 카드 선택!\n")
+            print("비슷한 카드를 추천드릴게요")
 
-        print()
         print("\n- 사용자 추천 카드 top3 -")
         idx = 1
         for c in recommend_cards:
             print(f"{idx}. {c}")
             idx += 1
-            # 추천 카드 혜택 나열 기능 추가해야 함
-        ##################################
