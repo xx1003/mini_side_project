@@ -107,7 +107,8 @@ if __name__=='__main__':
 
         # 소비영역별 자주 쓰는 브랜드 담을 딕셔너리
         user_brands = {}
-
+        
+        # 브랜드 없는 것들 제외
         for part in parts:
             brands = brand_dict[part]
             print(f"< {part_dict[part][0]} 영역 브랜드 >")
@@ -157,11 +158,11 @@ if __name__=='__main__':
         print(f"카드 : {user_card_name}")
         print("----------------------------------------")
 
-        # st.set_page_config(page_title="Card Rebalancing")
-        # st.title("credit card rebalancing")
+        set_kor_font()
+        st.subheader('카드 요약')
 
-        # st.subheader('카드 요약')
-        ##################### 수정 필요 #################################
+        ################################
+        # 소비내역 원그래프로 나타내기 
         ratio = [x/total_amount*100 for x in consume_amount.values()]
         # 기타 비율 추가
         etc = (total_amount-sum(consume_amount.values()))/total_amount
@@ -169,12 +170,18 @@ if __name__=='__main__':
             ratio.append(etc*100)
         labels = [part_dict[x][0] for x in consume_amount.keys()]
         labels.append('기타')
-        
-        plt.pie(ratio, labels=labels, autopct='%.1f%%', startangle=260, counterclock=False)
-        #################################################################
+        wedgeprops={'width': 0.7, 'edgecolor': 'w', 'linewidth': 5}
+        colors = ['#ff9999', '#ffc000', '#8fd9b6', '#d395d0']
+
+        fig, ax= plt.subplots(figsize=(3,3))
+        ax.pie(ratio, labels=labels, autopct='%.1f%%', startangle=260, counterclock=False, wedgeprops=wedgeprops, colors=colors, textprops={'fontsize':8})
+        # plt.title()
+        st.pyplot(fig)
+        ####################################
+
         print()
-        print(f"실적            {total_amount}원 / {user_card_margin}원")
-        print(f"연회비                     {user_card_fee}원")
+        print(f"실적 {total_amount}원 / {user_card_margin}원")
+        print(f"연회비 {user_card_fee}원")
         
         user_card_benefits = {}
         for k, v in part_dict.items():
