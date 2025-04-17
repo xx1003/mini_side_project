@@ -2,6 +2,7 @@ import pandas as pd
 
 if __name__ == "__main__":
     # temp = input(": ").split(" ")
+    
 
     # print(temp)
     # print(len(temp))
@@ -12,12 +13,13 @@ if __name__ == "__main__":
         'num2': [0,0,0,0,0,0,0,0]
     }
 
+    print(list(dict1.keys()))
 
-    df = pd.DataFrame(dict1)
-    df['num3'] = df['num'] + df['num']
-    print(df)
+    # df = pd.DataFrame(dict1)
+    # df['num3'] = df['num'] + df['num']
+    # print(df)
 
-    print(df.iloc[4]['num'])
+    # print(df.iloc[4]['num'])
 
     
     

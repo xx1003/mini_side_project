@@ -1,5 +1,8 @@
 import pandas as pd
 import streamlit as st
+import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.font_manager as fm
 import json
 
 credit_df = pd.read_excel("data/credit_data_final.xlsx")
@@ -11,9 +14,13 @@ for col in bene_list:
     credit_df[col] = credit_df[col].apply(json.loads)
     check_df[col] = check_df[col].apply(json.loads)
 
+def set_kor_font():
+    plt.rcParams['font.family'] = 'Malgun Gothic' 
+    plt.rcParams['axes.unicode_minus'] = False 
+    sns.set(font='Malgun Gothic', 
+            rc={'axes.unicode_minus' : False}, 
+            style='darkgrid')
 
-# st.subheader("데이터 미리보기")
-# st.dataframe(credit_df)
 
 if __name__=='__main__':
     # print(type(credit_df.loc[0,'순위']))
@@ -35,6 +42,10 @@ if __name__=='__main__':
         user_card_rank = int(input("주로 사용하는 카드 입력: "))
         user_card_info = temp_credit_df.loc[temp_credit_df['순위'] == user_card_rank, :]
         user_card_name = user_card_info['카드 이름'].values[0]
+        user_card_company = user_card_info['카드사'].values[0]
+        user_card_margin = user_card_info['실적'].values[0]
+        user_card_fee = user_card_info['연회비'].values[0]
+
         print(f"사용자님의 카드 : {user_card_name}")
         print()
         # ####################################
@@ -59,13 +70,13 @@ if __name__=='__main__':
         for i in range(1, len(part_dict)+1):
             print(f"{i}. {part_dict[str(i)][0]}")
 
-        temp_parts = input("자주 사용하는 소비 항목을 많이 쓰는 순서대로 선택해주세요.(space 구분): ").split(sep=" ")
+        temp_parts = input("자주 사용하는 소비 항목 세가지를 골라주세요.(space 구분): ").split(sep=" ")
         
         parts = []
 
         # 띄어쓰기 때문에 공백 들어가는 거 방지
         for part in temp_parts:            
-            if part!='':
+            if part:
                 parts.append(part)
 
         # 소비 항목별 이용금액 입력받는 기능
@@ -74,7 +85,11 @@ if __name__=='__main__':
         consume_amount = {}
         for idx, part in enumerate(parts):
             consume_amount[part] = int(input(f"{idx+1}. {part_dict[part][0]}: "))
-
+        
+        sorted_consume_amount = sorted(consume_amount.items(), key= lambda item:item[1], reverse=True)
+        
+        # parts 많이 쓰는 순서대로 정렬
+        parts = [x[0] for x in sorted_consume_amount]
 
         # 선택한 소비영역에서 자주 사용하는 브랜드 입력받는 기능
         brand_dict = {
@@ -103,17 +118,19 @@ if __name__=='__main__':
 
             # 띄어쓰기 때문에 공백 들어가는 거 방지
             part_brands = []
-            for part in temp_part_brands:            
-                if part!='' or part!=' ':
-                    part_brands.append(part)
+            for p in temp_part_brands:            
+                if p:
+                    part_brands.append(p)
+            # print(part_brands)
 
             # 브랜드 이름 담을 리스트
             temp_brand_names = []
             
-            if len(part_brands)== 0 or part_brands[0] == '':   # 브랜드를 선택하지 않은 경우
+            if len(part_brands)== 0 or not part_brands[0]:   # 브랜드를 선택하지 않은 경우
                 continue
+
             for part_brand in part_brands:  # index 자료형 str -> int 변경 필요
-                if part_brand == '':
+                if not part_brand:
                     continue
                 temp_brand_names.append(brand_dict[part][int(part_brand) - 1])  # -1 하는 이유 : 인덱스에 적용하기 위해서
             
@@ -133,6 +150,39 @@ if __name__=='__main__':
 
         ######################################################
         # 현재카드 분석하는 기능
+        print("- 사용자님의 카드 사용 분석 -")
+        
+        # 실적 / 월 평균 소비금액
+        print(f"카드사 : {user_card_company}")
+        print(f"카드 : {user_card_name}")
+        print("----------------------------------------")
+
+        # st.set_page_config(page_title="Card Rebalancing")
+        # st.title("credit card rebalancing")
+
+        # st.subheader('카드 요약')
+        ##################### 수정 필요 #################################
+        ratio = [x/total_amount*100 for x in consume_amount.values()]
+        # 기타 비율 추가
+        etc = (total_amount-sum(consume_amount.values()))/total_amount
+        if etc != 0:
+            ratio.append(etc*100)
+        labels = [part_dict[x][0] for x in consume_amount.keys()]
+        labels.append('기타')
+        
+        plt.pie(ratio, labels=labels, autopct='%.1f%%', startangle=260, counterclock=False)
+        #################################################################
+        print()
+        print(f"실적            {total_amount}원 / {user_card_margin}원")
+        print(f"연회비                     {user_card_fee}원")
+        
+        user_card_benefits = {}
+        for k, v in part_dict.items():
+            user_card_benefits[v[0]] = float(user_card_info[v[1]].values[0])
+        sorted_benefits = sorted(user_card_benefits.items(), key= lambda item:item[1], reverse=True)
+
+        for i in range(3):
+            print(f"{i+1}. {sorted_benefits[i][0]}", end='  ')
 
 
 
@@ -181,13 +231,6 @@ if __name__=='__main__':
             print(f"\n- 사용자가 {consume_part_str} 영역에서 선택한 브랜드 혜택을 포함하는 카드 -")
             print(temp_card_names, "\n")
         
-        # print("브랜드 포함 카드 점수")
-        
-        # print(credit_df.loc[credit_df['브랜드 카드 점수'] > 0, ['카드 이름', '브랜드 카드 점수']])
-
-        ####################################
-        # for k, v in brand_include_cards.items():
-        #     print(f"{part_dict[k][0] }")
 
         ####################################
         # 가중치 사용한 점수 기반 추천시스템 계산하는 기능
@@ -202,17 +245,12 @@ if __name__=='__main__':
                 # print(credit_df.loc[i, part_col])
                 temp_score += temp_credit_df.loc[i, part_col] * weight
             temp_credit_df.loc[i, '혜택률 카드 점수'] = float(temp_score)
-            # score_dict[credit_df.loc[i, '카드 이름']] = float(temp_score)
-
-        # print(score_dict)
-
-        # sorted_dict = sorted(score_dict.items(), key= lambda item:item[1], reverse=True)
-        # print(sorted_dict)
 
         temp_credit_df['총합 카드 점수'] = temp_credit_df['브랜드 카드 점수'] + temp_credit_df['혜택률 카드 점수']
         
         
         temp_credit_df.sort_values('총합 카드 점수', ascending=False, inplace=True)
+        temp_credit_df = temp_credit_df.reset_index(drop=True)
         print(temp_credit_df.loc[:,['카드 이름', '브랜드 카드 점수', '혜택률 카드 점수', '총합 카드 점수']])
         #################################
         
@@ -223,10 +261,10 @@ if __name__=='__main__':
         card_rank = 0       
 
         while len(recommend_cards) < 3:
-            if temp_credit_df.iloc[card_rank]['카드 이름'] == user_card_name:
+            if str(temp_credit_df.iloc[card_rank]['카드 이름']) == user_card_name:
                 check = True
-                continue
-            recommend_cards.append(temp_credit_df.loc[card_rank, '카드 이름'])
+            else:
+                recommend_cards.append(temp_credit_df.loc[card_rank, '카드 이름'])
             card_rank += 1
         
         if not check:
@@ -234,11 +272,6 @@ if __name__=='__main__':
             print("현재 사용하는 카드는 사용자의 소비패턴에 맞지 않아요!")
             print()
             print(f"- 사용자의 카드 <<{user_card_name}>> 가 제공하는 혜택 top 3 -")
-            
-            user_card_benefits = {}
-            for k, v in part_dict.items():
-                user_card_benefits[v[0]] = float(user_card_info[v[1]].values[0])
-            sorted_benefits = sorted(user_card_benefits.items(), key= lambda item:item[1], reverse=True)
 
             for i in range(3):
                 print(f"{i+1}. {sorted_benefits[i][0]}", end='  ')
