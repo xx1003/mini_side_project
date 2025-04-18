@@ -39,12 +39,12 @@ if __name__=='__main__':
 
         # ####################################
         # 주사용 카드 입력받는 기능
-        user_card_rank = int(input("주로 사용하는 카드 입력: "))
-        user_card_info = temp_credit_df.loc[temp_credit_df['순위'] == user_card_rank, :]
-        user_card_name = user_card_info['카드 이름'].values[0]
-        user_card_company = user_card_info['카드사'].values[0]
-        user_card_margin = user_card_info['실적'].values[0]
-        user_card_fee = user_card_info['연회비'].values[0]
+        user_card_rank = int(input("주로 사용하는 카드 입력: "))    # 사용자 순위
+        user_card_info = temp_credit_df.loc[temp_credit_df['순위'] == user_card_rank, :]    # 사용자 카드 df row
+        user_card_name = user_card_info['카드 이름'].values[0]  # 사용자 카드 이름
+        user_card_company = user_card_info['카드사'].values[0]  # 사용자 카드 카드사
+        user_card_margin = user_card_info['실적'].values[0]    # 사용자 카드 실적
+        user_card_fee = user_card_info['연회비'].values[0]      # 사용자 카드 연회비
 
         print(f"사용자님의 카드 : {user_card_name}")
         print()
@@ -72,7 +72,7 @@ if __name__=='__main__':
 
         temp_parts = input("자주 사용하는 소비 항목 세가지를 골라주세요.(space 구분): ").split(sep=" ")
         
-        parts = []
+        parts = []  # 사용자 주소비영역 딕셔너리 키 (part_dict의 키)
 
         # 띄어쓰기 때문에 공백 들어가는 거 방지
         for part in temp_parts:            
@@ -179,21 +179,39 @@ if __name__=='__main__':
         st.pyplot(fig)
         ####################################
 
+        ####################################
+        # 카드 기본정보 출력
         print()
-        print(f"실적 {total_amount}원 / {user_card_margin}원")
+        st.text(f"실적 {total_amount}원 / {user_card_margin * 10000}원")
+        print(f"실적 {total_amount}원 / {user_card_margin * 10000}원")
+        st.text(f"연회비 {user_card_fee}원")
         print(f"연회비 {user_card_fee}원")
         
         user_card_benefits = {}
         for k, v in part_dict.items():
-            user_card_benefits[v[0]] = float(user_card_info[v[1]].values[0])
+            user_card_benefits[v[0]] = user_card_info[v[1]].values[0]
         sorted_benefits = sorted(user_card_benefits.items(), key= lambda item:item[1], reverse=True)
 
+        st.text("카드 주요 혜택")
         for i in range(3):
             print(f"{i+1}. {sorted_benefits[i][0]}", end='  ')
+            st.text(f"{i+1}. {sorted_benefits[i][0]}")
+        ######################################
+        ### 여기 수정중!!!!!###########
+        st.subheader('소비 분석')
 
-
-
-
+        temp_dict = {
+            '소비 금액':[],
+            '받는 혜택':[]
+        }
+        for part, amount in sorted_consume_amount:
+            temp_dict['받는 혜택'].append(amount * user_card_info[part_dict[part][1]].values[0])
+            temp_dict['소비 금액'].append(amount)
+        
+        print([part_dict[x][0] for x in parts])
+        consume_df = pd.DataFrame(temp_dict)
+        st.table(consume_df)
+        #########################################
 
 
 
@@ -246,12 +264,12 @@ if __name__=='__main__':
         score_dict = {}
 
         for i in range(len(credit_df)):
-            temp_score = 0
+            temp_score = 0.0
             for part, weight in zip(parts, weights):
                 part_col = part_dict[part][1]
                 # print(credit_df.loc[i, part_col])
-                temp_score += temp_credit_df.loc[i, part_col] * weight
-            temp_credit_df.loc[i, '혜택률 카드 점수'] = float(temp_score)
+                temp_score += float(temp_credit_df.loc[i, part_col]) * weight
+            temp_credit_df.loc[i, '혜택률 카드 점수'] = temp_score
 
         temp_credit_df['총합 카드 점수'] = temp_credit_df['브랜드 카드 점수'] + temp_credit_df['혜택률 카드 점수']
         
