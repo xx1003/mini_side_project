@@ -1,10 +1,78 @@
 import pandas as pd
-import numpy as np
+import streamlit as st
+import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.font_manager as fm
+import json
 
 class Recommend:
     def __init__(self):
+        self.credit_df = pd.read_excel("data/credit_data_final.xlsx")
+        self.check_df = pd.read_excel("data/check_data_final.xlsx")
+
+        self.bene_list = ['카페 브랜드', '편의점 브랜드', '쇼핑 브랜드', '배달앱 브랜드', '문화생활 브랜드', '디지털구독 브랜드']
+        
+        for col in self.bene_list:
+            self.credit_df[col] = self.credit_df[col].apply(json.loads)
+            self.check_df[col] = self.check_df[col].apply(json.loads)
+
+        self.temp_credit_df = self.credit_df.copy()
+        self.temp_check_df = self.check_df.copy()
+
+        # 신용카드, 체크카드 카드사
+        self.credit_card_company = self.temp_credit_df['카드사'].drop_duplicates().values
+        self.check_card_company = self.temp_check_df['카드사'].drop_duplicates().values
+
+    def custom_cards(self):
+        pass
+    
+    def get_user_card(self):
+        print("분석하고 싶은 카드 정보를 입력해주세요.\n")
+
+        print("카드 종류 선택")
+        print("1. 신용카드     2. 체크카드")
+        card_sort = input(": ")
+
+        if card_sort == '1':
+            print("\n카드사 선택\n")
+            
+            for idx, company in enumerate(self.credit_card_company):
+                print(f"{idx+1}. {company}")
+            ##############수정 중!!!!!!!
+            card_company = self.credit_card_company[int(input(": ") - 1)]
+
+        elif card_sort == '2':
+            pass
+
+    def recommend_cards(self):
+
+        pass
+
+    def show_cards(self):
+        print("조회할 카드 종류")
+        print("1. 신용카드     2. 체크카드")
+        card_sort = input(": ")
+        
+        # 신용카드 순위 출력
+        if card_sort == '1':
+            print("<< 신용카드 top 99위 >>")
+            for rank, name in zip(self.temp_credit_df['순위'], self.temp_credit_df['카드 이름']):
+                print(f"{rank:>5}위 : {name}")
+
+        # 체크카드 순위 출력 
+        elif card_sort == '2':
+            print("<< 체크카드 top 99위 >>")
+            for rank, name in zip(self.temp_check_df['순위'], self.temp_check_df['카드 이름']):
+                print(f"{rank:>5}위 : {name}")
+
+        print()
+
+    def start():
         pass
 
     
-    def get_user_input():
-        print()
+
+if __name__ == "__main__":
+    r = Recommend()
+
+    # r.get_user_card()
