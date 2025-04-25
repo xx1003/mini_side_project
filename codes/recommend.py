@@ -23,9 +23,34 @@ class Recommend:
         self.credit_card_company = self.temp_credit_df['카드사'].drop_duplicates().values
         self.check_card_company = self.temp_check_df['카드사'].drop_duplicates().values
 
+        # 사용자 주사용 카드 정보
+        self.user_card_info = None
+
+
     def custom_cards(self):
         pass
     
+    def get_card(self, credit_or_check, df, card_company):
+        print("\n카드사 선택")
+        for idx, company in enumerate(card_company):
+            print(f"{idx+1}. {company}")
+
+        card_company_name = card_company[int(input(": "))- 1]
+        
+        if credit_or_check == 1:
+            print(f"\n{card_company_name}의 신용카드")
+        elif credit_or_check == 2:
+            print(f"\n{card_company_name}의 체크카드")
+
+        card_names = df.loc[df['카드사'] == card_company_name, '카드 이름'].values
+        for idx, card_name in enumerate(card_names):
+            print(f"{idx+1}. {card_name}")
+        
+        user_card_idx = int(input("\n카드 선택: ")) - 1
+        self.user_card_info = df.loc[df['카드 이름'] == card_names[user_card_idx], :]
+        
+        print(f"선택한 카드 : {self.user_card_info['카드 이름'].values[0]}")
+
     def get_user_card(self):
         print("분석하고 싶은 카드 정보를 입력해주세요.\n")
 
@@ -34,15 +59,10 @@ class Recommend:
         card_sort = input(": ")
 
         if card_sort == '1':
-            print("\n카드사 선택\n")
-            
-            for idx, company in enumerate(self.credit_card_company):
-                print(f"{idx+1}. {company}")
-            ##############수정 중!!!!!!!
-            card_company = self.credit_card_company[int(input(": ") - 1)]
-
+            self.get_card(card_sort, self.temp_credit_df, self.credit_card_company)            
         elif card_sort == '2':
-            pass
+            self.get_card(card_sort, self.temp_check_df, self.check_card_company) 
+         
 
     def recommend_cards(self):
 
@@ -75,4 +95,4 @@ class Recommend:
 if __name__ == "__main__":
     r = Recommend()
 
-    # r.get_user_card()
+    r.get_user_card()
