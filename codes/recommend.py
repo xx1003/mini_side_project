@@ -105,45 +105,12 @@ class Recommend:
             self.get_card(card_sort, self.temp_credit_df, self.credit_card_company)            
         elif card_sort == '2':
             self.get_card(card_sort, self.temp_check_df, self.check_card_company) 
-         
-    def get_user_consume_info(self):
-        # 월 평균 소비금액 입력
-        self.total_amount = int(input("해당 카드의 월 평균 소비금액을 알려주세요: "))
 
-        # 자주 사용하는 소비 항목 입력받는 기능
+    def print_parts(self):
         for i in range(1, len(self.part_dict)+1):
             print(f"{i}. {self.part_dict[str(i)][0]}")
-        
-        temp_parts = input("자주 사용하는 소비 항목 세가지를 골라주세요.(space 구분): ").split(sep=" ")
-        
-        parts = []  # 사용자 주소비영역 딕셔너리 키 (part_dict의 키)
 
-        # 띄어쓰기 때문에 공백 들어가는 거 방지
-        for part in temp_parts:            
-            if part:
-                parts.append(part)
-
-        # 소비 항목별 이용금액 입력받는 기능
-        print("\n자주 사용하는 소비 항목의 대략적인 금액을 작성해주세요.")
-        print(f"사용자의 월 평균 소비 금액 : {self.total_amount}원")
-        consume_amount = {}
-        for idx, part in enumerate(parts):
-            consume_amount[part] = int(input(f"{idx+1}. {self.part_dict[part][0]}: "))
-        
-        self.consume_amount = consume_amount
-        
-        sorted_consume_amount = sorted(consume_amount.items(), key= lambda item:item[1], reverse=True)
-        
-        # parts 많이 쓰는 순서대로 정렬
-        self.parts = [x[0] for x in sorted_consume_amount]
-        self.sorted_consume_amount = sorted_consume_amount
-        
-        # 디버깅용
-        print(self.sorted_consume_amount)
-        print()
-
-        # 브랜드 입력받는 기능
-        print("\n영역별 자주 사용하는 브랜드를 골라주세요.")
+    def get_user_brands(self):
         # 소비영역별 자주 쓰는 브랜드 담을 딕셔너리
         user_brands = {}
         
@@ -175,15 +142,53 @@ class Recommend:
                 temp_brand_names.append(self.brand_dict[k][int(part_brand) - 1])  # -1 하는 이유 : 인덱스에 적용하기 위해서
             
             user_brands[k] = temp_brand_names
+        return user_brands
 
-        self.user_brands = user_brands
+    def get_user_consume_info(self):
+        # 월 평균 소비금액 입력
+        self.total_amount = int(input("해당 카드의 월 평균 소비금액을 알려주세요: "))
+
+        # 자주 사용하는 소비 항목 입력받는 기능
+        self.print_parts()
+        
+        temp_parts = input("자주 사용하는 소비 항목 세가지를 골라주세요.(space 구분): ").split(sep=" ")
+        
+        parts = []  # 사용자 주소비영역 딕셔너리 키 (part_dict의 키)
+
+        # 띄어쓰기 때문에 공백 들어가는 거 방지
+        for part in temp_parts:            
+            if part:
+                parts.append(part)
+
+        # 소비 항목별 이용금액 입력받는 기능
+        print("\n자주 사용하는 소비 항목의 대략적인 금액을 작성해주세요.")
+        print(f"사용자의 월 평균 소비 금액 : {self.total_amount}원")
+        consume_amount = {}
+        for idx, part in enumerate(parts):
+            consume_amount[part] = int(input(f"{idx+1}. {self.part_dict[part][0]}: "))
+        
+        self.consume_amount = consume_amount
+        
+        sorted_consume_amount = sorted(consume_amount.items(), key= lambda item:item[1], reverse=True)
+        
+        # parts 많이 쓰는 순서대로 정렬
+        self.parts = [x[0] for x in sorted_consume_amount]
+        self.sorted_consume_amount = sorted_consume_amount
+        
+        # 디버깅용
+        print(self.sorted_consume_amount)
+        print()
+
+        # 브랜드 입력받는 기능
+        print("\n영역별 자주 사용하는 브랜드를 골라주세요.")
+        self.user_brands = self.get_user_brands()
         
         # 디버깅용
         # print(self.user_brands)
         print()
 
         # 사용자가 선택한 브랜드 출력
-        for k, v in user_brands.items():
+        for k, v in self.user_brands.items():
             print(f"{self.part_dict[k][0]} 영역 브랜드 : ", end='')
             for brand in v:
                 print(brand, end=" ")
@@ -201,6 +206,10 @@ class Recommend:
         ################################
         # 소비내역 원그래프로 나타내기 
         ratio = [x[1]/self.total_amount*100 for x in self.sorted_consume_amount]
+
+        # # 디버깅
+        # print(self.parts)
+        # print(self.sorted_consume_amount)
         
         # 기타 비율 추가
         etc = (self.total_amount-sum(self.consume_amount.values()))/self.total_amount
@@ -241,7 +250,10 @@ class Recommend:
         # 카드 기본정보 출력
         print()
         user_card_margin = self.user_card_info['실적'].values[0]
-        user_card_fee = self.user_card_info['연회비'].values[0]
+        try:
+            user_card_fee = self.user_card_info['연회비'].values[0]
+        except:
+            user_card_fee = 0
 
         st.text(f"실적 {self.total_amount}원 / {user_card_margin * 10000}원")
         print(f"실적 {self.total_amount}원 / {user_card_margin * 10000}원")
@@ -254,7 +266,11 @@ class Recommend:
         sorted_benefits = sorted(user_card_benefits.items(), key= lambda item:item[1], reverse=True)
         self.sorted_benefits = sorted_benefits
 
-        st.text("카드 주요 혜택")
+        st.text("나의 주요 소비")
+        for part in self.parts:
+            st.text(part)
+
+        st.text("카드의 주요 혜택")
         # 주사용카드가 제공하는 혜택
         temp_sorted_benefits = [x[0] for x in self.sorted_benefits if x[1] != 0.0]
         print(temp_sorted_benefits)
@@ -334,7 +350,6 @@ class Recommend:
         ######################################################
 
         #####################################################
-        # 수정 필요
         # 인사이트 도출
         not_bene = []
         yes_bene = []
@@ -362,13 +377,157 @@ class Recommend:
             st.text(f"이 카드는 {bene} 영역에서 혜택을 제공하고 있지 않아요.")
         st.text(f"이 카드가 제공하는 {recommend_bene} 영역 혜택을 잘 사용하고 있지 않아요.")
 
+    def recommend_calculate(self, df, ratio):
+        df['브랜드 카드 점수'] = 0.0
+        df['혜택률 카드 점수'] = 0.0
 
+        # step 1. 카드 혜택에 사용자가 선택한 브랜드가 포함되어 있는지 필터링
+        brand_include_cards = {}   # 사용자가 선택한 브랜드 혜택을 포함하는 카드 이름 저장
+        
+        for user_brand in self.user_brands.keys():                           # 소비영역별로 for 루프 돌기
+            consume_part_num = user_brand                               # 소비영역 번호 (자료형:str)
+            consume_part_str = self.part_dict[consume_part_num][0]           # 소비영역명 (자료형:str)
+            bene_percent = self.part_dict[consume_part_num][1]               # 소비영역 최대 혜택률 (자료형:float)
+            consume_part_brand_col = self.part_dict[consume_part_num][2]     # 소비영역 브랜드 컬럼명 (ex: '카페 브랜드')
+            user_choose_brands = self.user_brands[consume_part_num]          # 사용자가 선택한 브랜드들 (자료형:list)
+
+            # print(f"\n- 사용자가 {consume_part_str} 영역에서 선택한 브랜드 혜택을 포함하는 카드 -")
+
+            # 1차 필터링 : 소비영역 포함 카드
+            part_include_cards = df.loc[df[bene_percent]!=0.0, :]   
+            part_include_cards.reset_index(drop=True, inplace=True)
+            
+            temp_card_names = []
+            # ratio = [x[1]/self.total_amount*100 for x in self.sorted_consume_amount]
+            
+            # 2차 필터링 : 사용자가 고른 브랜드를 포함하는 카드, 브랜드를 많이 포함할수록 점수 ++
+            for ucb in user_choose_brands:                                      
+                for idx in range(len(part_include_cards)):
+                    if ucb in part_include_cards.loc[idx, consume_part_brand_col]:
+                        temp_card_names.append(part_include_cards.loc[idx, '카드 이름'])
+                        if user_brand in self.parts:
+                            if user_brand == self.parts[0]:
+                                df.loc[idx, '브랜드 카드 점수'] += 1*(ratio[0]/10)
+                            elif user_brand == self.parts[1]:
+                                df.loc[idx, '브랜드 카드 점수'] += 1*(ratio[1]/10)
+                            elif user_brand == self.parts[2]:
+                                df.loc[idx, '브랜드 카드 점수'] += 1*(ratio[2]/10)
+                        else:
+                            df.loc[idx, '브랜드 카드 점수'] += 1
+            temp_card_names = list(set(temp_card_names))
+
+            print()
+
+            brand_include_cards[consume_part_num] = temp_card_names
+            # print(f"\n- 사용자가 {consume_part_str} 영역에서 선택한 브랜드 혜택을 포함하는 카드 -")
+            # print(temp_card_names, "\n")
+
+            weights = ratio   # 월평균 소비액 대비 해당영역 소비액의 비율로 가중치 선정
+
+            for i in range(len(df)):
+                temp_score = 0.0
+                for part, weight in zip(self.parts, weights):
+                    part_col = self.part_dict[part][1]
+                    # print(credit_df.loc[i, part_col])
+                    temp_score += float(df.loc[i, part_col]) * weight
+                df.loc[i, '혜택률 카드 점수'] = temp_score
+
+            df['총합 카드 점수'] = df['브랜드 카드 점수'] + df['혜택률 카드 점수']
+            
+            
+            df.sort_values('총합 카드 점수', ascending=False, inplace=True)
+            df = df.reset_index(drop=True)
+            # print(df.loc[:,['카드 이름', '브랜드 카드 점수', '혜택률 카드 점수', '총합 카드 점수']])
+            #################################
+    
+    def recommend_print(self, df, credit_or_check):
+        ##################################
+        # 주사용 카드 분석 + 상위 5개 카드 추천
+        check = False
+        recommend_cards = []
+        card_rank = 0       
+
+        # 주사용 카드 이름
+        if self.user_card_info is None:
+            user_card_name = "이름 없음"
+        else:
+            user_card_name = self.user_card_info['카드 이름'].values[0]
+        
+        while len(recommend_cards) < 5:
+            if str(df.iloc[card_rank]['카드 이름']) != user_card_name:
+                recommend_cards.append(df.loc[card_rank, '카드 이름'])
+            card_rank += 1
+
+        if credit_or_check == 1:    # 신용카드 추천
+            print("\n- 신용카드 -")
+        elif credit_or_check == 2:    # 체크카드 추천
+            print("\n- 체크카드 -")
+
+        # 추천카드 혜택 출력 수정 필요    
+        idx = 1
+        for c in recommend_cards:
+            print(f"{idx}. {c}")
+            print(f"혜택: {df.loc[df['카드 이름'] == c, :]}")
+            idx += 1
+
+        
     def recommend_cards(self):
-        pass
+        ratio = [x[1]/self.total_amount*100 for x in self.sorted_consume_amount]
+        self.recommend_calculate(self.temp_credit_df, ratio)
+        self.recommend_calculate(self.temp_check_df, ratio)
+
+        self.recommend_print(self.temp_credit_df, 1)
+        self.recommend_print(self.temp_check_df, 2)
+        
+        # 카드 데이터프레임 초기화
+        self.temp_credit_df = self.credit_df.copy()
+        self.temp_check_df = self.check_df.copy()
+
+
+    def get_custom_info(self, df, credit_or_check):
+        print("\n원하는 혜택을 우선 순위대로 선택해주세요.")
+        for i in range(1, len(self.part_dict)+1):
+            print(f"{i}. {self.part_dict[str(i)][0]}")
+
+        temp_parts = input(": ").split(sep=" ")
+        parts = []  # 사용자 주소비영역 딕셔너리 키 (part_dict의 키)
+
+        # 띄어쓰기 때문에 공백 들어가는 거 방지
+        for part in temp_parts:            
+            if part:
+                parts.append(part)
+        self.parts = parts
+
+        print("\n혜택을 받고 싶은 브랜드를 선택해주세요.")
+        self.user_brands = self.get_user_brands()
+        
+        # 임의의 소비비율 설정
+        ratio = [50, 30, 20]
+
+        self.recommend_calculate(df, ratio)
+
+        for part in self.parts:
+            print(f"<{self.part_dict[part][0]}> ", end='')
+        print()
+        for brand in self.user_brands.values():
+            print(brand, end=' ')
+        print("\n에 맞춘 카드들을 모아봤어요.")
+        self.recommend_print(df, credit_or_check)
 
     def custom_cards(self):
-        pass
+        print("- 원하는 카드 찾기 -")
+        print()
 
+        print("원하는 카드 종류를 선택해주세요.")
+        print("1. 신용카드     2. 체크카드")
+        credit_or_check = int(input(": "))
+
+        if credit_or_check == 1:
+            self.get_custom_info(self.temp_credit_df, credit_or_check)
+            self.temp_credit_df = self.credit_df.copy()
+        elif credit_or_check == 2:
+            self.get_custom_info(self.temp_check_df, credit_or_check)
+            self.temp_check_df = self.check_df.copy()
 
     def show_cards(self):
         print("조회할 카드 종류")
@@ -396,8 +555,9 @@ class Recommend:
 
 if __name__ == "__main__":
     r = Recommend()
-    r.get_user_card()
-    r.get_user_consume_info()
-    
-    r.analy_card()
-    
+    # r.get_user_card()
+    # r.get_user_consume_info()
+    # print(r.user_brands)
+    # r.analy_card()
+    # r.recommend_cards()
+    r.custom_cards()

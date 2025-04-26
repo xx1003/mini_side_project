@@ -16,9 +16,12 @@ if __name__ == "__main__":
         if menu == '1':
             r.show_cards()
         elif menu == '2':
-            pass
+            r.custom_cards()
         elif menu == '3':
-            pass
+            r.get_user_card()
+            r.get_user_consume_info()
+            r.analy_card()
+            r.recommend_cards()
         elif menu == 'q':
             "프로그램을 종료합니다."
             break
