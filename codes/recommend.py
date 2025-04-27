@@ -268,7 +268,7 @@ class Recommend:
 
         st.text("나의 주요 소비")
         for part in self.parts:
-            st.text(part)
+            st.text(self.part_dict[part][0])
 
         st.text("카드의 주요 혜택")
         # 주사용카드가 제공하는 혜택
