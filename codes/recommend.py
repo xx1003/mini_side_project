@@ -144,7 +144,7 @@ class Recommend:
             user_brands[k] = temp_brand_names
         return user_brands
 
-    def get_user_consume_info(self):
+    # def get_user_consume_info(self):
         # 월 평균 소비금액 입력
         self.total_amount = int(input("해당 카드의 월 평균 소비금액을 알려주세요: "))
 
@@ -193,7 +193,91 @@ class Recommend:
             for brand in v:
                 print(brand, end=" ")
             print()
+    
+    def make_intervals(self):
+        # 소비금액 범위 5개의 구간으로 나누기
+        step = self.total_amount // 5
+        intervals = []
+
+        for i in range(5):
+            start = i * step
+            end = (i + 1) * step
+
+            if i == 0:
+                label = f"{end:,}원 미만"
+            elif i == 4:
+                label = f"{start:,}원 이상 {end:,}원 이하"
+            else:
+                label = f"{start:,}원 이상 {end:,}원 미만"
+            
+            range_num = (start, end)
+            
+            # 리스트 안의 튜플????
+            intervals.append((label, range_num))
         
+        return intervals
+    
+    ######################### 수정 중 #####################################
+    def get_user_consume_info(self):
+        # 월 평균 소비금액 입력
+        self.total_amount = int(input("해당 카드의 월 평균 소비금액을 알려주세요: "))
+
+        # 자주 사용하는 소비 항목 입력받는 기능
+        self.print_parts()
+        
+        temp_parts = input("자주 사용하는 소비 항목 세가지를 골라주세요.(space 구분): ").split(sep=" ")
+        
+        parts = []  # 사용자 주소비영역 딕셔너리 키 (part_dict의 키)
+
+        # 띄어쓰기 때문에 공백 들어가는 거 방지
+        for part in temp_parts:            
+            if part:
+                parts.append(part)
+
+        # 소비 항목별 이용금액 입력받는 기능
+        print("\n자주 사용하는 소비 항목의 대략적인 금액 범위를 선택해주세요.")
+        print(f"사용자의 월 평균 소비 금액 : {self.total_amount}원")
+
+        intervals = self.make_intervals()
+
+        # 소비 구간 보여주기
+        for idx, interval in enumerate(intervals):
+            print(f"{idx+1}. {interval[0]}")
+        # 
+        consume_amount = {}
+        for idx, part in enumerate(parts):
+            consume_amount[part] = intervals[int(input(f"{idx+1}. {self.part_dict[part][0]}: ")) - 1][1]
+        
+        print(consume_amount)
+
+        self.consume_amount = consume_amount
+        
+        # sorted_consume_amount : 튜플 리스트 [(part_id, consume_range)] 
+        sorted_consume_amount = sorted(consume_amount.items(), key= lambda item:item[1], reverse=True)
+
+        # parts 많이 쓰는 순서대로 정렬
+        self.parts = [x[0] for x in sorted_consume_amount]
+        self.sorted_consume_amount = sorted_consume_amount
+        
+        # 디버깅용
+        # print(self.sorted_consume_amount)
+        print()
+
+        # 브랜드 입력받는 기능
+        print("\n영역별 자주 사용하는 브랜드를 골라주세요.")
+        self.user_brands = self.get_user_brands()
+        
+        # 디버깅용
+        # print(self.user_brands)
+        print()
+
+        # 사용자가 선택한 브랜드 출력
+        for k, v in self.user_brands.items():
+            print(f"{self.part_dict[k][0]} 영역 브랜드 : ", end='')
+            for brand in v:
+                print(brand, end=" ")
+            print()
+
     def analy_card(self):
         plt.rcParams['font.family'] = 'Malgun Gothic' 
         plt.rcParams['axes.unicode_minus'] = False 
@@ -556,8 +640,8 @@ class Recommend:
 if __name__ == "__main__":
     r = Recommend()
     # r.get_user_card()
-    # r.get_user_consume_info()
+    r.get_user_consume_info()
     # print(r.user_brands)
     # r.analy_card()
     # r.recommend_cards()
-    r.custom_cards()
+    # r.custom_cards()
