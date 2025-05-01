@@ -143,7 +143,8 @@ class Recommend:
             
             user_brands[k] = temp_brand_names
         return user_brands
-
+    
+    # 소비 금액 숫자로 직접 입력받기
     # def get_user_consume_info(self):
         # 월 평균 소비금액 입력
         self.total_amount = int(input("해당 카드의 월 평균 소비금액을 알려주세요: "))
@@ -205,18 +206,20 @@ class Recommend:
 
             if i == 0:
                 label = f"{end:,}원 미만"
+                range_num = (1, end)
             elif i == 4:
                 label = f"{start:,}원 이상 {end:,}원 이하"
+                range_num = (start, end)
             else:
                 label = f"{start:,}원 이상 {end:,}원 미만"
-            
-            range_num = (start, end)
+                range_num = (start, end)
             
             # 리스트 안의 튜플????
             intervals.append((label, range_num))
         
         return intervals
     
+    # 소비 금액 구간으로 입력받기
     ######################### 수정 중 #####################################
     def get_user_consume_info(self):
         # 월 평균 소비금액 입력
@@ -248,6 +251,7 @@ class Recommend:
         for idx, part in enumerate(parts):
             consume_amount[part] = intervals[int(input(f"{idx+1}. {self.part_dict[part][0]}: ")) - 1][1]
         
+        # 딕셔너리 {영역아이디 : (소비범위 튜플)}
         print(consume_amount)
 
         self.consume_amount = consume_amount
@@ -289,16 +293,19 @@ class Recommend:
 
         ################################
         # 소비내역 원그래프로 나타내기 
-        ratio = [x[1]/self.total_amount*100 for x in self.sorted_consume_amount]
+        # 소비자가 선택한 소비범위의 중간값으로 계산
+        ratio = [((x[1][0] + x[1][1])/2)/self.total_amount*100 for x in self.sorted_consume_amount]
 
         # # 디버깅
         # print(self.parts)
         # print(self.sorted_consume_amount)
         
         # 기타 비율 추가
-        etc = (self.total_amount-sum(self.consume_amount.values()))/self.total_amount
+        etc = 100 - sum(ratio)
+        # etc = (self.total_amount-sum(self.consume_amount.values()))/self.total_amount
+
         if etc != 0:
-            ratio.append(etc*100)
+            ratio.append(etc)
         print(ratio)
 
         labels = [self.part_dict[x[0]][0] for x in self.sorted_consume_amount]
@@ -378,10 +385,21 @@ class Recommend:
             '소비 금액':[],
             '받는 혜택':[]
         }
+        # amount = (0, 20000)
         for part, amount in self.sorted_consume_amount:
-            temp_dict['받는 혜택'].append(int(amount * self.user_card_info[self.part_dict[part][1]].values[0]))
-            temp_dict['소비 금액'].append(int(amount))
-            lost_bene_amount -= amount
+            # temp_dict['받는 혜택'].append(int(amount * self.user_card_info[self.part_dict[part][1]].values[0]))
+            mini = int(amount[0] * self.user_card_info[self.part_dict[part][1]].values[0])
+            maxi = int(amount[1] * self.user_card_info[self.part_dict[part][1]].values[0])
+
+            mini_percent = round((mini / self.total_amount) * 100, 1)
+            maxi_percent = round((maxi / self.total_amount) * 100, 1)
+
+            temp_dict['받는 혜택'].append(f"최소 {mini:,}원 ~ 최대 {maxi:,}원")
+            # temp_dict['받는 혜택'].append(f"{mini_percent} ~ {maxi_percent}%")
+            temp_dict['소비 금액'].append(f"{amount[0]:,} ~ {amount[1]:,}원")
+            
+            # 소비선택 범위의 중간값으로 혜택 누락 금액 계산
+            lost_bene_amount -= (sum(amount)/2)
             
         print([self.part_dict[x][0] for x in self.parts])
         consume_df = pd.DataFrame(temp_dict, index=[self.part_dict[x][0] for x in self.parts])
@@ -402,7 +420,8 @@ class Recommend:
         for k, v in self.part_dict.items():
             if self.user_card_info[v[1]].values[0] == 0.0:
                 if k in self.parts:
-                    total_lost_amount += self.consume_amount[k]
+                    # total_lost_amount += self.consume_amount[k]
+                    total_lost_amount += sum(self.consume_amount[k])/2
                 else:
                     total_lost_amount += mean_rest_amount
             
@@ -556,7 +575,10 @@ class Recommend:
 
         
     def recommend_cards(self):
-        ratio = [x[1]/self.total_amount*100 for x in self.sorted_consume_amount]
+        # ratio = [x[1]/self.total_amount*100 for x in self.sorted_consume_amount]
+        # 중간값으로 비율 계산
+        ratio = [(sum(x[1])/2)/self.total_amount*100 for x in self.sorted_consume_amount]
+
         self.recommend_calculate(self.temp_credit_df, ratio)
         self.recommend_calculate(self.temp_check_df, ratio)
 
