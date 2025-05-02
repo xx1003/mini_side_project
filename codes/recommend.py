@@ -248,8 +248,20 @@ class Recommend:
             print(f"{idx+1}. {interval[0]}")
         # 
         consume_amount = {}
-        for idx, part in enumerate(parts):
-            consume_amount[part] = intervals[int(input(f"{idx+1}. {self.part_dict[part][0]}: ")) - 1][1]
+        
+        while True:
+            check_amount = 0
+            for idx, part in enumerate(parts):
+                consume_range = intervals[int(input(f"{idx+1}. {self.part_dict[part][0]}: ")) - 1][1]
+                consume_amount[part] = consume_range
+
+                # 사용자가 선택한 소비범위의 중간값으로 월 평균 소비금액 넘어가지 않는지 체크
+                check_amount += sum(consume_range)/2
+
+            if check_amount <= self.total_amount:
+                break
+            else:
+                print("소비금액을 다시 선택해주세요!")
         
         # 딕셔너리 {영역아이디 : (소비범위 튜플)}
         print(consume_amount)
@@ -393,9 +405,19 @@ class Recommend:
 
             mini_percent = round((mini / self.total_amount) * 100, 1)
             maxi_percent = round((maxi / self.total_amount) * 100, 1)
+            
+            # 받는 혜택을 금액으로 표시
+            if maxi == 0:
+                temp_dict['받는 혜택'].append(f"혜택 없음")
+            else:
+                temp_dict['받는 혜택'].append(f"최소 {mini:,}원 ~ 최대 {maxi:,}원")
 
-            temp_dict['받는 혜택'].append(f"최소 {mini:,}원 ~ 최대 {maxi:,}원")
-            # temp_dict['받는 혜택'].append(f"{mini_percent} ~ {maxi_percent}%")
+            # # 받는 혜택을 퍼센트로 표시
+            # if maxi_percent == 0.0:
+            #     temp_dict['받는 혜택'].append(f"혜택 없음")
+            # else:
+            #     temp_dict['받는 혜택'].append(f"{mini_percent} ~ {maxi_percent}%")
+
             temp_dict['소비 금액'].append(f"{amount[0]:,} ~ {amount[1]:,}원")
             
             # 소비선택 범위의 중간값으로 혜택 누락 금액 계산
@@ -547,6 +569,8 @@ class Recommend:
         ##################################
         # 주사용 카드 분석 + 상위 5개 카드 추천
         check = False
+
+        # 추천카드 5개 저장 리스트
         recommend_cards = []
         card_rank = 0       
 
@@ -556,21 +580,41 @@ class Recommend:
         else:
             user_card_name = self.user_card_info['카드 이름'].values[0]
         
+        ############################## 뭔가 여기서 에러 남
         while len(recommend_cards) < 5:
-            if str(df.iloc[card_rank]['카드 이름']) != user_card_name:
-                recommend_cards.append(df.loc[card_rank, '카드 이름'])
+            if str(df.iloc[card_rank]['카드 이름']).lstrip() != user_card_name:
+                # recommend_cards.append(df.loc[card_rank, '카드 이름'])
+                recommend_cards.append(df.loc[card_rank, :])
+
             card_rank += 1
 
         if credit_or_check == 1:    # 신용카드 추천
             print("\n- 신용카드 -")
         elif credit_or_check == 2:    # 체크카드 추천
             print("\n- 체크카드 -")
-
-        # 추천카드 혜택 출력 수정 필요    
+        
+        # 1. 추천카드 목록 출력
+        # 2. 추천카드 번호 사용자로부터 입력
+        # 3. 해당카드 상세정보 출력
+        # 추천카드 혜택 출력 수정 필요
+            
         idx = 1
+        #  for c in recommend_cards:
+        #     print(f"{idx}. {c}")
+        #     print(f"혜택: {df.loc[df['카드 이름'] == c, :]}")
+        #     idx += 1
+
         for c in recommend_cards:
-            print(f"{idx}. {c}")
-            print(f"혜택: {df.loc[df['카드 이름'] == c, :]}")
+            print(f"{idx}. {c['카드 이름']}")
+            card_benefits = {}
+            for k, v in self.part_dict.items():
+                card_benefits[v[0]] = c[v[1]]
+
+            card_sorted_benefits = sorted(card_benefits.items(), key= lambda item:item[1], reverse=True)
+            
+            print(f"주요 혜택 : ",end ='')
+            print(card_sorted_benefits)
+            print(f"혜택: {c}")
             idx += 1
 
         
