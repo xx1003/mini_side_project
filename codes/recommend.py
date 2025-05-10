@@ -64,6 +64,14 @@ class Recommend:
 
         # 주사용 카드 혜택 top3
         self.sorted_benefits = None
+
+        self.part_detail_dict = {
+            '1':'가맹점 혜택', '2':'교통 혜택', '3':'쇼핑 혜택',
+            '4':'카페 혜택', '5':'편의점 혜택', '6':'이동통신 혜택',
+            '7':'의료 혜택', '8':'디지털구독 혜택', 
+            '9':'배달앱/간편결제 혜택', '10':'외식 혜택', 
+            '11':'차량 혜택', '12':'항공 혜택', '13':'문화생활 혜택'
+        }
     
     # streamlit 한글 폰트 적용
     def set_kor_font():
@@ -219,7 +227,7 @@ class Recommend:
         
         return intervals
     
-    # 소비 금액 구간으로 입력받기
+    # 소비 금액 구간 or 금액으로 입력받기
     ######################### 수정 중 #####################################
     def get_user_consume_info(self):
         # 월 평균 소비금액 입력
@@ -246,24 +254,37 @@ class Recommend:
         # 소비 구간 보여주기
         for idx, interval in enumerate(intervals):
             print(f"{idx+1}. {interval[0]}")
-        # 
+
+        # 소비 금액 직접 입력 칸
+        print("더 정확한 분석을 원하시면 정확한 금액을 직접 입력해주세요.")
+
+
         consume_amount = {}
         
         while True:
             check_amount = 0
             for idx, part in enumerate(parts):
-                consume_range = intervals[int(input(f"{idx+1}. {self.part_dict[part][0]}: ")) - 1][1]
-                consume_amount[part] = consume_range
+                user_choose_amount = int(input(f"{idx+1}. {self.part_dict[part][0]}: "))
+            
+                # 사용자가 소비 금액 범위로 골랐을 경우
+                if user_choose_amount in [1,2,3,4,5]:
+                    consume_range = intervals[user_choose_amount - 1][1]
+                    consume_amount[part] = consume_range
 
-                # 사용자가 선택한 소비범위의 중간값으로 월 평균 소비금액 넘어가지 않는지 체크
-                check_amount += sum(consume_range)/2
-
+                    # 사용자가 선택한 소비범위의 중간값으로 월 평균 소비금액 넘어가지 않는지 체크
+                    check_amount += sum(consume_range)/2
+                # 사용자가 직접 금액을 입력한 경우
+                else:
+                    # 정렬하기 쉽도록 튜플로 넣기
+                    consume_amount[part] = (user_choose_amount, user_choose_amount)
+                    check_amount += user_choose_amount
+    
             if check_amount <= self.total_amount:
                 break
             else:
                 print("소비금액을 다시 선택해주세요!")
         
-        # 딕셔너리 {영역아이디 : (소비범위 튜플)}
+        # 딕셔너리 {영역아이디 : (소비범위 튜플) or 영역아이디 : (소비금액, 소비금액)}
         print(consume_amount)
 
         self.consume_amount = consume_amount
@@ -358,10 +379,10 @@ class Recommend:
         except:
             user_card_fee = 0
 
-        st.text(f"실적 {self.total_amount}원 / {user_card_margin * 10000}원")
-        print(f"실적 {self.total_amount}원 / {user_card_margin * 10000}원")
-        st.text(f"연회비 {user_card_fee}원")
-        print(f"연회비 {user_card_fee}원")
+        st.text(f"실적 {self.total_amount:,}원 / {user_card_margin * 10000:,}원")
+        print(f"실적 {self.total_amount:,}원 / {user_card_margin * 10000:,}원")
+        st.text(f"연회비 {user_card_fee:,}원")
+        print(f"연회비 {user_card_fee:,}원")
         
         user_card_benefits = {}
         for k, v in self.part_dict.items():
@@ -369,11 +390,11 @@ class Recommend:
         sorted_benefits = sorted(user_card_benefits.items(), key= lambda item:item[1], reverse=True)
         self.sorted_benefits = sorted_benefits
 
-        st.text("나의 주요 소비")
+        st.text("<나의 주요 소비>")
         for part in self.parts:
             st.text(self.part_dict[part][0])
 
-        st.text("카드의 주요 혜택")
+        st.text("<카드의 주요 혜택>")
         # 주사용카드가 제공하는 혜택
         temp_sorted_benefits = [x[0] for x in self.sorted_benefits if x[1] != 0.0]
         print(temp_sorted_benefits)
@@ -410,7 +431,10 @@ class Recommend:
             if maxi == 0:
                 temp_dict['받는 혜택'].append(f"혜택 없음")
             else:
-                temp_dict['받는 혜택'].append(f"최소 {mini:,}원 ~ 최대 {maxi:,}원")
+                if maxi == mini:
+                    temp_dict['받는 혜택'].append(f"최대 {maxi:,}원")
+                else:
+                    temp_dict['받는 혜택'].append(f"최소 {mini:,}원 ~ 최대 {maxi:,}원")
 
             # # 받는 혜택을 퍼센트로 표시
             # if maxi_percent == 0.0:
@@ -418,7 +442,10 @@ class Recommend:
             # else:
             #     temp_dict['받는 혜택'].append(f"{mini_percent} ~ {maxi_percent}%")
 
-            temp_dict['소비 금액'].append(f"{amount[0]:,} ~ {amount[1]:,}원")
+            if amount[0] == amount[1]:
+                temp_dict['소비 금액'].append(f"{amount[0]:,}원")
+            else:
+                temp_dict['소비 금액'].append(f"{amount[0]:,} ~ {amount[1]:,}원")
             
             # 소비선택 범위의 중간값으로 혜택 누락 금액 계산
             lost_bene_amount -= (sum(amount)/2)
@@ -432,9 +459,9 @@ class Recommend:
         #########################################
         st.subheader('혜택 누락')
 
-        # (월평균 소비금액 - 주소비영역 3개 소비금액) / 주소비영역 제외 나머지 영역 개수(13-3=10) = 나머지 영역의 평균 소비금액
+        # (월평균 소비금액 - 주소비영역 3개 소비금액 범위의 중간값의 합) / 주소비영역 제외 나머지 영역 개수(13-3=10) = 나머지 영역의 평균 소비금액
         # 나머지 영역의 평균 소비금액 중 해당영역의 혜택률이 0인 부분 소비금액 합 = 누락 혜택 금액
-        # 만약 주소비영역의 혜택률이 0이면 실제 소비금액을 누락 혜택 금액에 더함
+        # 만약 주소비영역의 혜택률이 0이면 실제 소비금액의 범위의 중간값을 누락 혜택 금액에 더함
         total_lost_amount = 0.0
 
         mean_rest_amount = lost_bene_amount / 10
@@ -447,7 +474,7 @@ class Recommend:
                 else:
                     total_lost_amount += mean_rest_amount
             
-        print(f"누락 혜택 금액 {int(total_lost_amount)} 원")
+        print(f"누락 혜택 금액 {int(total_lost_amount):,} 원")
 
         fig2, ax2 = plt.subplots()
         ratio2 = [total_lost_amount/self.total_amount * 100, 100 - (total_lost_amount/self.total_amount * 100)]
@@ -494,10 +521,10 @@ class Recommend:
                 recommend_bene.append(bene)
 
         st.subheader('인사이트')
-        st.text("좋은 점")
+        st.text("<좋은 점>")
         for bene in yes_bene:
             st.text(f"{bene} 영역의 혜택을 잘 받고 있어요!")
-        st.text("개선할 점")
+        st.text("<개선할 점>")
         for bene in not_bene:
             st.text(f"이 카드는 {bene} 영역에서 혜택을 제공하고 있지 않아요.")
         st.text(f"이 카드가 제공하는 {recommend_bene} 영역 혜택을 잘 사용하고 있지 않아요.")
@@ -564,6 +591,8 @@ class Recommend:
             df = df.reset_index(drop=True)
             # print(df.loc[:,['카드 이름', '브랜드 카드 점수', '혜택률 카드 점수', '총합 카드 점수']])
             #################################
+
+            return df
     
     def recommend_print(self, df, credit_or_check):
         ##################################
@@ -580,7 +609,6 @@ class Recommend:
         else:
             user_card_name = self.user_card_info['카드 이름'].values[0]
         
-        ############################## 뭔가 여기서 에러 남
         while len(recommend_cards) < 5:
             if str(df.iloc[card_rank]['카드 이름']).lstrip() != user_card_name:
                 # recommend_cards.append(df.loc[card_rank, '카드 이름'])
@@ -599,23 +627,50 @@ class Recommend:
         # 추천카드 혜택 출력 수정 필요
             
         idx = 1
-        #  for c in recommend_cards:
-        #     print(f"{idx}. {c}")
-        #     print(f"혜택: {df.loc[df['카드 이름'] == c, :]}")
-        #     idx += 1
 
         for c in recommend_cards:
             print(f"{idx}. {c['카드 이름']}")
+            
+            if credit_or_check == 1:
+                print(f"연회비      {c['연회비']:,}원")
+            print(f"실적      {int(c['실적'])*10000:,}원")
+
             card_benefits = {}
             for k, v in self.part_dict.items():
                 card_benefits[v[0]] = c[v[1]]
 
             card_sorted_benefits = sorted(card_benefits.items(), key= lambda item:item[1], reverse=True)
-            
-            print(f"주요 혜택 : ",end ='')
-            print(card_sorted_benefits)
-            print(f"혜택: {c}")
+            print()
+
+            # 주요 혜택 최대 3가지
+            print(f"<주요 혜택>")
+            for i in range(3):
+                if card_sorted_benefits[i][1] == 0.0:
+                    break
+                else:
+                    print(card_sorted_benefits[i][0], end='  ')
+            print("\n")
+
+            # 추천 카드 혜택 정보 전체 출력
+            print(f"<혜택 정보>")
+            for k, v in self.part_dict.items():
+                if c[v[1]] != 0.0:
+                    print(f"-{v[0]}-")
+
+                    # 브랜드 있는 소비영역이면 브랜드 출력
+                    if len(v) == 3:
+                        if len(c[v[2]]) != 0:
+                            print(f"브랜드 : {c[v[2]]}")
+                    
+                    # 할인율
+                    print(f"할인율 : {c[v[1]] * 100}%")
+
+                    # 혜택 상세정보
+                    print(f"혜택 상세정보 : {c[self.part_detail_dict[k]]}")
+                    print()
+
             idx += 1
+            print()
 
         
     def recommend_cards(self):
@@ -623,11 +678,20 @@ class Recommend:
         # 중간값으로 비율 계산
         ratio = [(sum(x[1])/2)/self.total_amount*100 for x in self.sorted_consume_amount]
 
-        self.recommend_calculate(self.temp_credit_df, ratio)
-        self.recommend_calculate(self.temp_check_df, ratio)
+        # self.recommend_calculate(self.temp_credit_df, ratio)
+        # self.recommend_calculate(self.temp_check_df, ratio)
+        
+        credit_df = self.recommend_calculate(self.temp_credit_df, ratio)
+        check_df = self.recommend_calculate(self.temp_check_df, ratio)
 
-        self.recommend_print(self.temp_credit_df, 1)
-        self.recommend_print(self.temp_check_df, 2)
+        print(credit_df)
+        print(check_df)
+
+        # self.recommend_print(self.temp_credit_df, 1)
+        # self.recommend_print(self.temp_check_df, 2)
+        
+        self.recommend_print(credit_df, 1)
+        self.recommend_print(check_df, 2)
         
         # 카드 데이터프레임 초기화
         self.temp_credit_df = self.credit_df.copy()

@@ -17,11 +17,15 @@ if __name__ == "__main__":
 
     df = pd.DataFrame(dict1)
     
-    print(df['num2'].drop_duplicates())
+    # print(df['num2'].drop_duplicates())
     # df['num3'] = df['num'] + df['num']
     # print(df)
 
     # print(df.iloc[4]['num'])
+
+    s = "     diidididi       "
+    print(s.lstrip())
+    
 
     
     
