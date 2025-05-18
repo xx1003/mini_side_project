@@ -630,7 +630,7 @@ class Recommend:
 
         for c in recommend_cards:
             print(f"{idx}. {c['카드 이름']}")
-            
+            print(f"카드사      {c['카드사']}")
             if credit_or_check == 1:
                 print(f"연회비      {c['연회비']:,}원")
             print(f"실적      {int(c['실적'])*10000:,}원")
